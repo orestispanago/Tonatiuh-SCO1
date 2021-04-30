@@ -2,7 +2,7 @@ import os
 import glob
 import sqlite3
 import pandas as pd
-
+import seaborn as sns
 
 def read_sql_script(script_name):
     with open(script_name, 'r') as f:
@@ -64,3 +64,8 @@ def read_dir(folder):
 df = read_dir("raw")
 
 df["intercept_factor"] = df["absorber"] / df["aux"]
+
+df1 = df[["phi", "intercept_factor"]]
+df1.reset_index(inplace=True)
+df1 = df1.pivot("phi", "azimuth", "intercept_factor")
+sns.heatmap(df1)
