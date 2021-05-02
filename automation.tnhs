@@ -1,5 +1,5 @@
 const wdir = "/home/orestis/Projects/Tonatiuh-SCO1-non-linear/";
-const expdir = wdir + "raw/";
+var expdir;
 
 tonatiuh.Open(wdir + "comp_parab_C1.25_fl0.25_1segm_aux_surface_ideal.tnh");
 
@@ -11,21 +11,52 @@ tonatiuh.SetExportIntersectionSurfaceSide(true);
 tonatiuh.SetExportPreviousNextPhotonID(false);
 tonatiuh.SetExportPhotonMapType("SQL_Database");
 // tonatiuh.SetRaysDrawingOptions(false, false);
-tonatiuh.SetExportTypeParameterValue( "ExportDirectory",  expdir );
+tonatiuh.SetExportTypeParameterValue("ExportDirectory", expdir);
 
 const radius = 0.0625;
 const shift_y = 0.1875
 
-for (var theta = 0; theta <= 60; theta = theta + 10) {
-  var x = - radius * Math.sin(theta * Math.PI / 180);;
-  var y = radius * Math.cos(theta * Math.PI / 180) + shift_y;
-  var translation = x.toString() + " " + y.toString() + " 0";
-  tonatiuh.SetValue("//SunNode/RootNode/Absorber_fr", "translation", translation);
-  var fname = x.toFixed(3).toString() + "_" + y.toFixed(3).toString();
+// expdir = wdir + "raw/";
+// for (var theta = 0; theta <= 60; theta = theta + 10) {
+//   var x = - radius * Math.sin(theta * Math.PI / 180);;
+//   var y = radius * Math.cos(theta * Math.PI / 180) + shift_y;
+//   var translation = x.toString() + " " + y.toString() + " 0";
+//   tonatiuh.SetValue("//SunNode/RootNode/Absorber_fr", "translation", translation);
+//   var fname = x.toFixed(3).toString() + "_" + y.toFixed(3).toString();
+//
+//   for (var az = 135; az <= 225; az = az + 10) {
+//     tonatiuh.ChangeSunPosition(az, 0);
+//     tonatiuh.SetExportTypeParameterValue("DBFilename", fname + "_" + theta.toString() + "_" + az );
+//     tonatiuh.Run();
+//   }
+// }
 
-  for (var az = 135; az <= 225; az = az + 10) {
-    tonatiuh.ChangeSunPosition(az, 0);
-    tonatiuh.SetExportTypeParameterValue("DBFilename", fname + "_" + theta.toString() + "_" + az );
-    tonatiuh.Run();
-  }
+function validate(dirname, func) {
+	expdir = wdir + dirname + "/";
+	tonatiuh.SetExportTypeParameterValue("ExportDirectory", expdir);
+   for (var az = 135; az <= 225; az = az + 1) {
+	var phi =func(az);
+ 	var x = - radius * Math.sin(phi * Math.PI / 180);;
+ 	var y = radius * Math.cos(phi * Math.PI / 180) + shift_y;
+	var translation = x.toString() + " " + y.toString() + " 0";
+	tonatiuh.SetValue("//SunNode/RootNode/Absorber_fr", "translation", translation);
+	var fname = x.toFixed(3).toString() + "_" + y.toFixed(3).toString();
+     	tonatiuh.ChangeSunPosition(az, 0);
+     	tonatiuh.SetExportTypeParameterValue("DBFilename", fname + "_" + phi.toString() + "_" + az );
+     	tonatiuh.Run();
+   }
 }
+
+function constant_rotational_speed(az){
+	return  (az - 135) * 4;
+}
+
+function linear_regression(az){
+	return 3.48*az-446.51;
+}
+
+function polynomial(az){
+	return 0.000501*az*az*az - 0.2704 * az*az  + 51.307 * az  - 3214.438;
+}
+// validate("polynomial", polynomial);
+validate("linear_regression", linear_regression);
