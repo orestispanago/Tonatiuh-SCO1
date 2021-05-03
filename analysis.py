@@ -22,9 +22,7 @@ def plot_heatmap(df):
     df1.reset_index(inplace=True)
     df1 = df1.pivot("phi", "azimuth", "intercept_factor")
     sns.heatmap(df1)
-    # g.set_facecolor('xkcd:salmon')
     plt.show()
-
 
 def regression_results(x,y):
     X = add_constant(x)  # include constant (intercept) in ols model
@@ -34,53 +32,60 @@ def regression_results(x,y):
 def polynomial(x, a, b, c,d):
     return a * x** 3 + b * x**2 + c*x +d 
 
-def lmfit_polynomial(func):
+def lmfit_polynomial(x,y, func):
     model = lmfit.models.Model(func)
     params = model.make_params(a=0, b=0, c=40,  d=-3000)
     return model.fit(y, params, x=x)
 
-def statsmodels_polynomial(x,y):
-    polynomial_features= PolynomialFeatures(degree=3)
+def statsmodels_polynomial(x,y, degree):
+    polynomial_features= PolynomialFeatures(degree=degree)
     xp = polynomial_features.fit_transform(x.values.reshape(-1,1))
     model = sm.OLS(y, xp)
     result = model.fit()
     return result, result.predict(xp)
 
+def select_greater_than(df, value):    
+    filtered = df.loc[df['intercept_factor'] >= value]
+    selected = select_semicircles(filtered)
+    return filtered, selected
+
+def select_max(df):
+    df1 = df.reset_index()
+    maxes = df1.loc[df1.groupby('azimuth')['intercept_factor'].idxmax()][
+        ['azimuth','phi','intercept_factor']]
+    return maxes.set_index("azimuth")
+
 # sns.set_theme()
 
 df = datareader.read_dir("Radius_0.0825_shift_y_0.165")
 
-filtered = df.loc[df['intercept_factor'] >= 0.7]
-# filtered = df.groupby(df.index).max()
-
+threshold = 0.7
+filtered, selected = select_greater_than(df, threshold)
 plot_heatmap(filtered)
-
-selected = select_semicircles(filtered)
 plot_heatmap(selected)
 
-
 sns.scatterplot(data=selected, x='azimuth', y='phi')
-plt.title("Intercept factor > 0.6")
+plt.title(f"Intercept factor > {threshold}")
 plt.show()
+
 
 selected.reset_index(inplace=True)
 x = selected["azimuth"]
 y = selected["phi"]
 
-
 linregres_results = regression_results(x, y)
 slope = linregres_results.params[1]
 intercept = linregres_results.params[0]
 
-polynomial_result = lmfit_polynomial(polynomial)
+polynomial_result = lmfit_polynomial(x,y,polynomial)
 a,b,c,d = polynomial_result.values.values()
 
-sm_poly, ypred = statsmodels_polynomial(x,y)
+sm_poly, ypred = statsmodels_polynomial(x,y,20)
 
 plt.plot(x,y,'.', alpha=0.3)
 plt.plot(x, intercept + slope*x, 'r', label=f'{slope:.2f} x {intercept:.2f}')
 plt.plot(x, polynomial_result.best_fit, 'k--', label=f"{a:.4f}x3 {b:.2f}x2 + {c:.2f}x {d:.2f}")
-plt.plot(x,ypred)
+plt.plot(x,ypred, label="20-degree polyunomial")
 plt.legend()
 plt.show()
 
