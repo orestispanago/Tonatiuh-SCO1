@@ -66,6 +66,7 @@ plot_heatmap(selected)
 
 sns.scatterplot(data=selected, x='azimuth', y='phi')
 plt.title(f"Intercept factor > {threshold}")
+plt.savefig("pics/intercept_07.png")
 plt.show()
 
 
@@ -85,15 +86,23 @@ sm_poly, ypred = statsmodels_polynomial(x,y,20)
 plt.plot(x,y,'.', alpha=0.3)
 plt.plot(x, intercept + slope*x, 'r', label=f'{slope:.2f} x {intercept:.2f}')
 plt.plot(x, polynomial_result.best_fit, 'k--', label=f"{a:.4f}x3 {b:.2f}x2 + {c:.2f}x {d:.2f}")
-plt.plot(x,ypred, label="20-degree polyunomial")
+# plt.plot(x,ypred, label="20-degree polyunomial")
+plt.xlabel("azimuth")
+plt.ylabel("phi")
+plt.title(f"Intercept factor > {threshold}")
 plt.legend()
+plt.savefig("pics/fits.png")
 plt.show()
 
 
 linreg = datareader.read_dir("linear_regression")
 sns.lineplot(data=linreg, x="azimuth", y="intercept_factor")
+plt.title("Linear regression")
+plt.savefig("pics/linear_regression_validation.png")
 plt.show()
 
 polyn = datareader.read_dir("polynomial")
 sns.lineplot(data=polyn, x="azimuth", y="intercept_factor")
+plt.title("3rd degree polynomial")
+plt.savefig("pics/3deg_polynomial_validation.png")
 plt.show()

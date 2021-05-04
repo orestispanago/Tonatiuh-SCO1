@@ -1,0 +1,63 @@
+"""
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:                    phi   R-squared:                       0.988
+Model:                            OLS   Adj. R-squared:                  0.988
+Method:                 Least Squares   F-statistic:                 4.394e+04
+Date:                Tue, 04 May 2021   Prob (F-statistic):               0.00
+Time:                        16:12:18   Log-Likelihood:                -2042.7
+No. Observations:                 522   AIC:                             4089.
+Df Residuals:                     520   BIC:                             4098.
+Df Model:                           1                                         
+Covariance Type:            nonrobust                                         
+==============================================================================
+                 coef    std err          t      P>|t|      [0.025      0.975]
+------------------------------------------------------------------------------
+const       -446.5104      3.013   -148.181      0.000    -452.430    -440.591
+azimuth        3.4814      0.017    209.619      0.000       3.449       3.514
+==============================================================================
+Omnibus:                        2.266   Durbin-Watson:                   1.199
+Prob(Omnibus):                  0.322   Jarque-Bera (JB):                2.310
+Skew:                          -0.158   Prob(JB):                        0.315
+Kurtosis:                       2.923   Cond. No.                     1.03e+03
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+[2] The condition number is large, 1.03e+03. This might indicate that there are
+strong multicollinearity or other numerical problems.
+"""
+
+
+"""
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:                    phi   R-squared:                       0.992
+Model:                            OLS   Adj. R-squared:                  0.992
+Method:                 Least Squares   F-statistic:                 2.072e+04
+Date:                Tue, 04 May 2021   Prob (F-statistic):               0.00
+Time:                        16:11:20   Log-Likelihood:                -1952.1
+No. Observations:                 522   AIC:                             3912.
+Df Residuals:                     518   BIC:                             3929.
+Df Model:                           3                                         
+Covariance Type:            nonrobust                                         
+==============================================================================
+                 coef    std err          t      P>|t|      [0.025      0.975]
+------------------------------------------------------------------------------
+const      -3214.4381    188.944    -17.013      0.000   -3585.629   -2843.247
+x1            51.3073      3.262     15.727      0.000      44.898      57.716
+x2            -0.2705      0.018    -14.656      0.000      -0.307      -0.234
+x3             0.0005   3.42e-05     14.639      0.000       0.000       0.001
+==============================================================================
+Omnibus:                       24.442   Durbin-Watson:                   1.692
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):               58.832
+Skew:                          -0.185   Prob(JB):                     1.68e-13
+Kurtosis:                       4.603   Cond. No.                     2.96e+09
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+[2] The condition number is large, 2.96e+09. This might indicate that there are
+strong multicollinearity or other numerical problems.
+"""
+
