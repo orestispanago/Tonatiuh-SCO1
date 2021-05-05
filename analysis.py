@@ -5,7 +5,7 @@ import lmfit
 import statsmodels.api as sm
 from statsmodels.api import add_constant
 from sklearn.preprocessing import PolynomialFeatures
-
+import numpy as np
 
 def select_semicircles(df):
     df = df.reset_index()
@@ -44,6 +44,18 @@ def statsmodels_polynomial(x,y, degree):
     result = model.fit()
     return result, result.predict(xp)
 
+def logit_function(x, a, b, c,d):
+    """ logit function is the inverse sigmoid: log(x/(1-x)), 0<x<1
+    added c.d to normalize data """
+    x_norm = (x-d)/c
+    logit =  np.log(x_norm/(1-x_norm))
+    return a*logit +b
+
+def lmfit_logit(x,y, func):    
+    model = lmfit.models.Model(func)
+    params = model.make_params(a=35.4, b=170, c=91, d=134.4)
+    return model.fit(y, params, x=x)
+
 def select_greater_than(df, value):    
     filtered = df.loc[df['intercept_factor'] >= value]
     selected = select_semicircles(filtered)
@@ -59,7 +71,7 @@ def select_max(df):
 
 df = datareader.read_dir("Radius_0.0825_shift_y_0.165")
 
-threshold = 0.7
+threshold = 0.6
 filtered, selected = select_greater_than(df, threshold)
 plot_heatmap(filtered)
 plot_heatmap(selected)
@@ -68,7 +80,6 @@ sns.scatterplot(data=selected, x='azimuth', y='phi')
 plt.title(f"Intercept factor > {threshold}")
 plt.savefig("pics/intercept_07.png")
 plt.show()
-
 
 selected.reset_index(inplace=True)
 x = selected["azimuth"]
@@ -83,10 +94,14 @@ a,b,c,d = polynomial_result.values.values()
 
 sm_poly, ypred = statsmodels_polynomial(x,y,20)
 
+logit_result = lmfit_logit(x,y, logit_function)
+
 plt.plot(x,y,'.', alpha=0.3)
 plt.plot(x, intercept + slope*x, 'r', label=f'{slope:.2f} x {intercept:.2f}')
-plt.plot(x, polynomial_result.best_fit, 'k--', label=f"{a:.4f}x3 {b:.2f}x2 + {c:.2f}x {d:.2f}")
 # plt.plot(x,ypred, label="20-degree polyunomial")
+# plt.plot(x, logit_result.init_fit, 'b--', label="initial fit")
+plt.plot(x, logit_result.best_fit, label="logit best fit")
+plt.plot(x, polynomial_result.best_fit, 'k--', label=f"{a:.4f}x3 {b:.2f}x2 + {c:.2f}x {d:.2f}")
 plt.xlabel("azimuth")
 plt.ylabel("phi")
 plt.title(f"Intercept factor > {threshold}")
