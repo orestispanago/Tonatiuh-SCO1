@@ -1,0 +1,24 @@
+[[Model]]
+    Model(polynomial)
+[[Fit Statistics]]
+    # fitting method   = leastsq
+    # function evals   = 11
+    # data points      = 522
+    # variables        = 4
+    chi-square         = 54126.7378
+    reduced chi-square = 104.491772
+    Akaike info crit   = 2430.81914
+    Bayesian info crit = 2447.84981
+    R-squared          = 0.99173394
+[[Variables]]
+    a:  5.0108e-04 +/- 3.4229e-05 (6.83%) (init = 0)
+    b: -0.27048394 +/- 0.01845533 (6.82%) (init = 0)
+    c:  51.3073394 +/- 3.26230151 (6.36%) (init = 40)
+    d: -3214.43807 +/- 188.943974 (5.88%) (init = -3000)
+[[Correlations]] (unreported correlations are < 0.100)
+    C(a, b) = -0.9996
+    C(b, c) = -0.9995
+    C(c, d) = -0.9995
+    C(a, c) = +0.9982
+    C(b, d) = +0.9980
+    C(a, d) = -0.9958
