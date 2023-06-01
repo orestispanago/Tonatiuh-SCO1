@@ -8,7 +8,8 @@ from statsmodels.api import add_constant
 from sklearn.preprocessing import PolynomialFeatures
 import numpy as np
 import os
-from matplotlib import ticker
+import json
+
 
 params = {
           'font.size': 14,
@@ -37,8 +38,8 @@ def plot_heatmap(df, fname="pics/heatmap.png", title="$\gamma$"):
     df1 = df1.pivot("phi", "azimuth", "intercept_factor")
     ax = sns.heatmap(df1)
     ax.invert_yaxis()
-    ax.set_xlabel(r"$\theta_{az}$")
-    ax.set_ylabel(r"$\phi$")
+    ax.set_xlabel(r"$\theta_{az} \ (\degree)$")
+    ax.set_ylabel(r"$\phi \ (\degree)$")
     ax.set_title(title)
     ax.set_yticks([0, 180, 360])
     ax.set_yticklabels(["0", "180", "360"])
@@ -64,7 +65,7 @@ def lmfit_polynomial(x,y, func):
 
 def lmfit_polynomial_to_txt(lmfit_result, fname="lmfit_polynomial_results.txt"):
     with open(fname, "w") as f:
-        f.write(polynomial_result.fit_report())
+        f.write(lmfit_result.fit_report())
         
 def statsmodels_polynomial(x,y, degree):
     polynomial_features= PolynomialFeatures(degree=degree)
@@ -96,6 +97,49 @@ def select_max(df):
         ['azimuth','phi','intercept_factor']]
     return maxes.set_index("azimuth")
 
+
+def save_regresults(results, fname="linregress_stats.json"):
+    linregress_dict = {
+        "slope": results.params[1],
+        "slope_stderr": results.bse.values[1],
+        "intercept":results.params[0],
+        "intercept_stderr":results.bse.values[0],
+        "r2" : results.rsquared,
+        "pvalue" : results.pvalues.values[0],
+    }
+    print(json.dumps(linregress_dict, indent=4))
+    with open(fname, "w") as f:
+        json.dump(linregress_dict, f, indent=4)
+        
+def plot_fits(x,y): 
+    linregres_results = regression_results(x, y)
+    save_regresults(linregres_results, fname="linregress_stats.json")
+    slope = linregres_results.params[1]
+    intercept = linregres_results.params[0]
+    
+    polynomial_result = lmfit_polynomial(x,y,polynomial)
+    lmfit_polynomial_to_txt(polynomial_result, fname="lmfit_polynomial_results.txt")
+    
+    sm_poly, ypred = statsmodels_polynomial(x,y,20)
+    logit_result = lmfit_logit(x,y, logit_function)
+    
+    plt.plot(x,y,'.')
+    plt.plot(x, intercept + slope*x, 'r', linewidth=3,label="Linear fit")
+    # plt.plot(x,ypred, label="20-degree polyunomial")
+    # plt.plot(x, logit_result.init_fit, 'b--', label="initial fit")
+    # plt.plot(x, logit_result.best_fit, label="logit best fit")
+    plt.plot(x, polynomial_result.best_fit, 'k--',linewidth=2, label="3rd degree polynomial")
+    plt.xlabel(r"$\theta_{az} \ (\degree)$")
+    plt.ylabel("$\phi \ (\degree)$")
+    plt.title(f"$\gamma > {threshold}$")
+    plt.legend()
+    pic_path = "pics/fits.png"
+    mkdir_if_not_exists(os.path.dirname(pic_path))
+    plt.tight_layout()
+    plt.savefig(pic_path)
+    plt.show()
+    
+    
 df = pd.read_csv("Radius_0.0825_shift_y_0.165.csv", index_col="azimuth")
 # df = datareader.read_dir("Radius_0.0825_shift_y_0.165")
 plot_heatmap(df, fname="pics/heatmap_intercept_factor_all_phi_az.png")
@@ -103,50 +147,12 @@ plot_heatmap(df, fname="pics/heatmap_intercept_factor_all_phi_az.png")
 threshold = 0.7
 filtered, selected = select_greater_than(df, threshold)
 # plot_heatmap(filtered)
-plot_heatmap(selected, fname="pics/filter07_simple.png", title="$\gamma > 0.7$")
-
-# sns.scatterplot(data=selected, x='azimuth', y='phi')
-# plt.plot(selected.index, selected["phi"], ".")
-# plt.xlabel(r"$\theta_{az}")
-# plt.ylabel("$\phi$")
-# plt.title(f"$\gamma > {threshold}$")
-# pic_path = "pics/intercept_07.png"
-# mkdir_if_not_exists(os.path.dirname(pic_path))
-# plt.savefig(pic_path)
-# plt.show()
-
+# plot_heatmap(selected, fname="pics/filter07_simple.png", title="$\gamma > 0.7$")
 selected.reset_index(inplace=True)
 x = selected["azimuth"]
 y = selected["phi"]
 
-linregres_results = regression_results(x, y)
-slope = linregres_results.params[1]
-intercept = linregres_results.params[0]
-
-polynomial_result = lmfit_polynomial(x,y,polynomial)
-lmfit_polynomial_to_txt(polynomial_result, fname="lmfit_polynomial_results.txt")
-a,b,c,d = polynomial_result.values.values()
-
-sm_poly, ypred = statsmodels_polynomial(x,y,20)
-
-logit_result = lmfit_logit(x,y, logit_function)
-
-plt.plot(x,y,'.')
-plt.plot(x, intercept + slope*x, 'r', linewidth=3,label="Linear fit")
-# plt.plot(x,ypred, label="20-degree polyunomial")
-# plt.plot(x, logit_result.init_fit, 'b--', label="initial fit")
-# plt.plot(x, logit_result.best_fit, label="logit best fit")
-plt.plot(x, polynomial_result.best_fit, 'k--',linewidth=2, label="3rd degree polynomial")
-plt.xlabel(r"$\theta_{az}$")
-plt.ylabel("$\phi$")
-plt.title(f"$\gamma > {threshold}$")
-plt.legend()
-pic_path = "pics/fits.png"
-mkdir_if_not_exists(os.path.dirname(pic_path))
-plt.tight_layout()
-plt.savefig(pic_path)
-plt.show()
-
+plot_fits(x,y)
 
 # linreg = datareader.read_dir("linear_regression")
 # sns.lineplot(data=linreg, x="azimuth", y="intercept_factor")
