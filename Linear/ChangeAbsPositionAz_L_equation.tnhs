@@ -1,0 +1,35 @@
+// Absorber positions: 0.1 to 0.3m from reflector
+// Azimuth: -135 to 225
+// Exports trace results to .db and flux analysis to .txt
+// Export filename: az.db
+
+wdir = "C:/Users/user/Drafts/Compound-Parabolic/Optimal-Absorber-Position-Linear/";
+expdir = wdir + "raweq/";
+
+tonatiuh.Open( wdir +  "comp_parab_C1.25_fl0.25_1segm_aux_surface_ideal.tnh" );
+
+tonatiuh.SetRaysPerIteration(100);
+tonatiuh.SetExportPreviousNextPhotonID( true );
+tonatiuh.SetExportPhotonMapType( "SQL_Database" );
+tonatiuh.SetExportTypeParameterValue( "ExportDirectory",  expdir );
+
+
+for( var az = 135; az <= 225; az=az+5 ){
+	if( az<=180 ){
+		var ypos = -0.0036*az + 0.7396;
+	}
+	else{
+		var ypos = 0.0034*az -0.5293;
+	}
+	ypos = ypos.toString();
+	var translation = "0 "+ypos+" 0";
+	tonatiuh.SetValue("//SunNode/RootNode/Absorber_fr", "translation", translation);
+	//var fname = Number(ypos).toFixed(2).toString(); // converts abs position to 2 decimal and then to string
+	
+	tonatiuh.ChangeSunPosition( az, 0 );
+	var s = az.toString();
+	tonatiuh.SetExportTypeParameterValue( "DBFilename",   s );
+	tonatiuh.SetExportAllPhotonMap();
+	tonatiuh.Run();
+//	tonatiuh.RunFluxAnalysis("//SunNode/RootNode/Absorber_fr/Cyl_abs", "OUTSIDE", 10000,20,20, expdir,  s,true);
+}
