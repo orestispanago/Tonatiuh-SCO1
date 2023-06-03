@@ -12,7 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy.stats as stats
-
+from tqdm import tqdm
 
 params = {
           'font.size': 14,
@@ -20,6 +20,11 @@ params = {
            'savefig.dpi': 200.0,
           }
 plt.rcParams.update(params)
+
+def mkdir_if_not_exists(dirname):
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+        print("Created dir:", dirname)
 
 def read_db_file(dbname):
     """ Reads .db files
@@ -33,27 +38,23 @@ def read_db_file(dbname):
     conn.close()
     return df, ids
 
-def read_db_files(files):
-    dfr = pd.DataFrame(columns=['angle', 'position', 'intercept factor'])
-    for i in dbfiles:
-        angle = os.path.basename(i)[5:-3]  # extract angle from filename
-        pos = os.path.basename(i)[:4]  # extracts abs position from filename
-        pos = float(pos) * 1000  # converts abs position to mm
-        photons, surfaces = read_db_file(i)
+def read_db_files(dbfiles):
+    records = []
+    for dbfile in tqdm(dbfiles):
+        pos, angle = os.path.basename(dbfile)[:-3].split("_")
+        # pos = float(pos) * 1000  # converts abs position to mm
+        photons, surfaces = read_db_file(dbfile)
         try:
             absorber_id = surfaces['id'][surfaces["Path"].str.contains("Cyl_abs")].values[0]  # Finds absorber id
             aux_id = surfaces['id'][surfaces["Path"].str.contains("aux")].values[0] # Finds auxiliary surface id
             abs_hits = photons['surfaceID'].value_counts()[absorber_id]
             aux_hits = photons['surfaceID'].value_counts()[aux_id]
-            nj = 100*abs_hits/aux_hits
-            dfr = dfr.append({'angle': angle, 'position': pos, 'intercept factor': nj},
-                             ignore_index=True)
+            nj = abs_hits/aux_hits
+            records.append({'angle': angle, 'position': pos, 'intercept factor': nj})
         except IndexError as e:
-            print(e)
-    dfr = dfr.astype(int)
-    dfr = dfr.pivot('position', 'angle', 'intercept factor')
-    dfr = dfr.sort_values(by='position', ascending=False)
-    return dfr
+            print(dbfile, e)
+    df = pd.DataFrame.from_records(records)
+    return df
 
 def plot_regression(df, side="left"):
     if side=="left":
@@ -61,33 +62,51 @@ def plot_regression(df, side="left"):
     else:
         df1 = df.loc[180:]
     x = df1.index.values
-    y = df1['pos'].values.tolist()
+    y = df1['position'].values.tolist()
     slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
     
     fig, axes = plt.subplots()
     plt.plot(x,y,".", markersize="8")
-    plt.plot(x, x*slope+intercept, "r", linewidth=3, label="$y={0:.3f}x {1:+.1f}$".format(slope, intercept))
+    plt.plot(x, x*slope+intercept, "r", linewidth=3, label="$y={0:.4f}x {1:+.2f}$".format(slope, intercept))
     plt.xlabel(r"$\theta_{az} \ (\degree)$")
     plt.ylabel("$y \ (m)$")
-    # g = sns.regplot(x = x,y=y,line_kws={'label': "$y={0:.3f}x+{1:.1f}$".format(slope, intercept)})
-    # plt.legend()
-    plt.savefig(f"linear_fit_{side}.png")
+    plt.legend()
+    fname = f"plots/linear_fit_{side}.png"
+    mkdir_if_not_exists(os.path.dirname(fname))
+    plt.savefig(fname)
     plt.show()
 
-dbfiles = glob.glob(os.getcwd() + '/raw1/*.db') # creates list of .db files in /raw1
 
-dfr = read_db_files(dbfiles)
 
-ax = sns.heatmap(dfr,cbar_kws={'label': '$\gamma$'})
+def plot_heatmap(df, fname="plots/heatmap.png", title="$\gamma$"):
+    # df1.reset_index(inplace=True)
+    df1 = df.pivot("position", "angle", "intercept factor")
+    ax = sns.heatmap(df1)
+    ax.invert_yaxis()
+    ax.set_xlabel(r"$\theta_{az} \ (\degree)$")
+    ax.set_ylabel(r"$y \ (m)$")
+    ax.set_title(title)
+    ax.set_yticks([0, 135, 270])
+    ax.set_yticklabels(["0.030", "0.165", "0.300"])
+    ax.set_xticks([0, 45, 90])
+    ax.set_xticklabels(["135", "180", "225"], rotation=0)
+    mkdir_if_not_exists(os.path.dirname(fname))
+    plt.savefig(fname)
+    plt.show()
 
-# Selects max intercept factor values
-dfl = pd.DataFrame(columns=['angle','pos','maxnj'])
-for j in list(dfr):
-    max_nj = dfr[j].nlargest(1).values[0]
-    bestpos = dfr[j].nlargest(1).index.values[0]/1000
-    dfl = dfl.append({'angle':j,'pos':bestpos, 'maxnj': max_nj},ignore_index=True)
-dfl = dfl.set_index('angle',drop=True)
 
+# dbfiles = glob.glob(os.getcwd() + '/raw/*.db') # creates list of .db files in /raw1
+# df = read_db_files(dbfiles)
+# df.to_csv("linear.csv", index=False)
+
+df = pd.read_csv("linear.csv")
+
+plot_heatmap(df)
+
+dfl = df.sort_values('intercept factor', ascending=False).drop_duplicates(['angle'])
+dfl.set_index("angle", inplace=True)
+dfl.sort_index(inplace=True)
 
 plot_regression(dfl, side="left")
 plot_regression(dfl, side="right")
+
