@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy.stats as stats
 from tqdm import tqdm
+import json
+
 
 params = {
           'font.size': 14,
@@ -56,6 +58,18 @@ def read_db_files(dbfiles):
     df = pd.DataFrame.from_records(records)
     return df
 
+def save_regresults(reg_results, fname="out/linregress_stats.json"):
+    linregress_dict = {
+        "slope": reg_results.slope,
+        "slope_stderr": reg_results.stderr,
+        "intercept":reg_results.intercept,
+        "intercept_stderr":reg_results.intercept_stderr,
+        "r" : reg_results.rvalue,
+        "pvalue" : reg_results.pvalue,
+    }
+    with open(fname, "w") as f:
+        json.dump(linregress_dict, f, indent=4)
+
 def plot_regression(df, side="left"):
     if side=="left":
         df1 = df.loc[:180] # selects angles up to 180°
@@ -63,8 +77,10 @@ def plot_regression(df, side="left"):
         df1 = df.loc[180:]
     x = df1.index.values
     y = df1['position'].values.tolist()
-    slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
-    
+    reg_results = stats.linregress(x,y)
+    slope = reg_results.slope
+    intercept = reg_results.intercept
+    save_regresults(reg_results, fname=f"linregress_stats_{side}.json")
     fig, axes = plt.subplots()
     plt.plot(x,y,".", markersize="8")
     plt.plot(x, x*slope+intercept, "r", linewidth=3, label="$y={0:.4f}x {1:+.2f}$".format(slope, intercept))
