@@ -3,7 +3,7 @@
 // Exports trace results to .db and flux analysis to .txt
 // Export filename: az.db
 
-wdir = "C:/Users/user/Drafts/Compound-Parabolic/Optimal-Absorber-Position-Linear/";
+wdir = "C:/Users/orestis/Desktop/Projects/Tonatiuh-SCO1/Linear/";
 expdir = wdir + "raweq/";
 
 tonatiuh.Open( wdir +  "comp_parab_C1.25_fl0.25_1segm_aux_surface_ideal.tnh" );
@@ -14,7 +14,7 @@ tonatiuh.SetExportPhotonMapType( "SQL_Database" );
 tonatiuh.SetExportTypeParameterValue( "ExportDirectory",  expdir );
 
 
-for( var az = 135; az <= 225; az=az+5 ){
+for( var az = 135; az <= 225; az=az+0.1 ){
 	if( az<=180 ){
 		var ypos = -0.0036*az + 0.7396;
 	}
@@ -27,7 +27,7 @@ for( var az = 135; az <= 225; az=az+5 ){
 	//var fname = Number(ypos).toFixed(2).toString(); // converts abs position to 2 decimal and then to string
 	
 	tonatiuh.ChangeSunPosition( az, 0 );
-	var s = az.toString();
+	var s = Number(az).toFixed(1).toString();
 	tonatiuh.SetExportTypeParameterValue( "DBFilename",   s );
 	tonatiuh.SetExportAllPhotonMap();
 	tonatiuh.Run();
