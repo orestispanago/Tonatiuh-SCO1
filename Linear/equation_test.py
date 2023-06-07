@@ -84,10 +84,12 @@ def plot_equation_test(df):
     y = df['intercept factor'].values
     plt.plot(x,y, "." ,markersize=6)
     yhat = savitzky_golay(y, 51, 3) # window size 51, polynomial order 3
-    plt.plot(x,yhat, color='red', linewidth=3, label="Savitzky Golay filter")
+    plt.plot(x[8:-8], smooth(y,19)[8:-8], linewidth=3, label="Discrete Linear Convolution")
+    # plt.plot(x,yhat, color='red', linewidth=3, label="Savitzky-Golay filter")
     plt.legend()
     plt.xlabel('$\\theta_{az}(\degree)$')
     plt.ylabel('$\gamma$')
+    plt.savefig("equation_test.png")
     plt.show()
 
 # dbfiles = glob.glob(os.getcwd() + '/raweq/*.db')
