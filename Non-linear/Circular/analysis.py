@@ -13,6 +13,7 @@ import json
 
 params = {
           'font.size': 14,
+          # 'figure.constrained_layout.use': True,
            'savefig.dpi': 200.0,
           }
 plt.rcParams.update(params)
@@ -111,14 +112,14 @@ def save_regresults(results, fname="linregress_stats.json"):
     with open(fname, "w") as f:
         json.dump(linregress_dict, f, indent=4)
         
-def plot_fits(x,y): 
+def plot_fits(x,y, threshold = "threshold"): 
     linregres_results = regression_results(x, y)
-    save_regresults(linregres_results, fname="linregress_stats.json")
+    save_regresults(linregres_results, fname="out/linregress_stats.json")
     slope = linregres_results.params[1]
     intercept = linregres_results.params[0]
     
     polynomial_result = lmfit_polynomial(x,y,polynomial)
-    lmfit_polynomial_to_txt(polynomial_result, fname="lmfit_polynomial_results.txt")
+    lmfit_polynomial_to_txt(polynomial_result, fname="out/lmfit_polynomial_results.txt")
     
     sm_poly, ypred = statsmodels_polynomial(x,y,20)
     logit_result = lmfit_logit(x,y, logit_function)
@@ -140,32 +141,35 @@ def plot_fits(x,y):
     plt.show()
     
     
-df = pd.read_csv("Radius_0.0825_shift_y_0.165.csv", index_col="azimuth")
-# df = datareader.read_dir("Radius_0.0825_shift_y_0.165")
-plot_heatmap(df, fname="pics/heatmap_intercept_factor_all_phi_az.png")
+# df = pd.read_csv("data/equation-calculation/Radius_0.0825_shift_y_0.165.csv", index_col="azimuth")
+# # df = datareader.read_dir("Radius_0.0825_shift_y_0.165")
+# plot_heatmap(df, fname="pics/heatmap_intercept_factor_all_phi_az.png")
 
-threshold = 0.7
-filtered, selected = select_greater_than(df, threshold)
-# plot_heatmap(filtered)
-# plot_heatmap(selected, fname="pics/filter07_simple.png", title="$\gamma > 0.7$")
-selected.reset_index(inplace=True)
-x = selected["azimuth"]
-y = selected["phi"]
+# threshold = 0.7
+# filtered, selected = select_greater_than(df, threshold)
+# # plot_heatmap(filtered)
+# # plot_heatmap(selected, fname="pics/filter07_simple.png", title="$\gamma > 0.7$")
+# selected.reset_index(inplace=True)
+# x = selected["azimuth"]
+# y = selected["phi"]
 
-plot_fits(x,y)
+# plot_fits(x,y, threshold = 0.7)
 
-# linreg = datareader.read_dir("linear_regression")
-# sns.lineplot(data=linreg, x="azimuth", y="intercept_factor")
-# plt.title("Linear regression")
-# pic_path = "pics/linear_regression_validation.png"
-# mkdir_if_not_exists(os.path.dirname(pic_path))
-# plt.savefig(pic_path)
-# plt.show()
+# linreg = datareader.read_dir("data/equation-validation/raw/linear_regression")
+linreg = pd.read_csv("data/equation-validation/linear_regression_1000rays.csv", index_col="azimuth")
+linreg = linreg.groupby(linreg.index // 4).mean()
 
-# polyn = datareader.read_dir("polynomial")
-# sns.lineplot(data=polyn, x="azimuth", y="intercept_factor")
-# plt.title("3rd degree polynomial")
-# pic_path = "pics/3deg_polynomial_validation.png"
-# mkdir_if_not_exists(os.path.dirname(pic_path))
-# plt.savefig(pic_path)
-# plt.show()
+# polyn = datareader.read_dir("data/equation-validation/raw/polynomial")
+polyn = pd.read_csv("data/equation-validation/polynomial_regression_1000rays.csv", index_col="azimuth")
+polyn = polyn.groupby(polyn.index // 4).mean()
+
+plt.plot(linreg.index, linreg["intercept_factor"], linewidth=3, label="linear regression")
+plt.plot(polyn.index, polyn["intercept_factor"], linewidth=3, label="3rd degree polynomial")
+plt.xlabel(r"$\theta_{az} \ (\degree)$")
+plt.ylabel("$\gamma$")
+plt.legend()
+pic_path = "pics/linear_vs_polynomial_regression.png"
+mkdir_if_not_exists(os.path.dirname(pic_path))
+plt.tight_layout()
+plt.savefig(pic_path)
+plt.show()

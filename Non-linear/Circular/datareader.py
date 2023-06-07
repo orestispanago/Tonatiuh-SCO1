@@ -29,7 +29,7 @@ def fluxes_to_dict(fname, sql_script, data_dict):
 def parse_filename(fname):
     base_name = os.path.basename(fname)[:-3]
     x, y, phi, az = base_name.split("_")[:]
-    return float(x), float(y), float(phi), int(az)
+    return float(x), float(y), float(phi), float(az)
 
 
 def angles_to_dict(fname, data_dict):
