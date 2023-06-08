@@ -82,20 +82,20 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
 def plot_equation_test(df):
     x = df["angle"].values
     y = df['intercept factor'].values
-    plt.plot(x,y, "." ,markersize=6)
-    yhat = savitzky_golay(y, 51, 3) # window size 51, polynomial order 3
-    plt.plot(x[8:-8], smooth(y,19)[8:-8], linewidth=3, label="Discrete Linear Convolution")
+    plt.plot(x,y, linewidth=4)
+    # yhat = savitzky_golay(y, 51, 3) # window size 51, polynomial order 3
+    plt.plot(x[8:-8], smooth(y,6)[8:-8], linewidth=3, label="Discrete Linear Convolution")
     # plt.plot(x,yhat, color='red', linewidth=3, label="Savitzky-Golay filter")
     plt.legend()
-    plt.xlabel('$\\theta_{az}(\degree)$')
+    plt.xlabel('$\\theta_{az} \ (\degree)$')
     plt.ylabel('$\gamma$')
-    plt.savefig("equation_test.png")
+    plt.savefig("plots/equation_test.png")
     plt.show()
 
 # dbfiles = glob.glob(os.getcwd() + '/raweq/*.db')
 
 # df = read_db_files(dbfiles)
-df = pd.read_csv("equation_test_100rays.csv")
-
+df = pd.read_csv("equation_test_10000rays.csv")
+df = df.groupby(df.index // 10).mean()
 plot_equation_test(df)
 

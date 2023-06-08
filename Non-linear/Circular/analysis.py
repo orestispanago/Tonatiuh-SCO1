@@ -38,10 +38,12 @@ def plot_heatmap(df, fname="pics/heatmap.png", title="$\gamma$"):
     df1.reset_index(inplace=True)
     df1 = df1.pivot("phi", "azimuth", "intercept_factor")
     ax = sns.heatmap(df1)
+    cbar = ax.collections[0].colorbar
+    # cbar.set_label(cbar_label, labelpad=30)
+    cbar.ax.set_title(title)
     ax.invert_yaxis()
     ax.set_xlabel(r"$\theta_{az} \ (\degree)$")
     ax.set_ylabel(r"$\phi \ (\degree)$")
-    ax.set_title(title)
     ax.set_yticks([0, 180, 360])
     ax.set_yticklabels(["0", "180", "360"])
     ax.set_xticks([0, 45, 90])
@@ -141,35 +143,43 @@ def plot_fits(x,y, threshold = "threshold"):
     plt.show()
     
     
-# df = pd.read_csv("data/equation-calculation/Radius_0.0825_shift_y_0.165.csv", index_col="azimuth")
-# # df = datareader.read_dir("Radius_0.0825_shift_y_0.165")
-# plot_heatmap(df, fname="pics/heatmap_intercept_factor_all_phi_az.png")
+df = pd.read_csv("data/equation-calculation/Radius_0.0825_shift_y_0.165.csv", index_col="azimuth")
+# df = datareader.read_dir("Radius_0.0825_shift_y_0.165")
+plot_heatmap(df, fname="pics/heatmap_intercept_factor_all_phi_az.png")
 
-# threshold = 0.7
-# filtered, selected = select_greater_than(df, threshold)
-# # plot_heatmap(filtered)
-# # plot_heatmap(selected, fname="pics/filter07_simple.png", title="$\gamma > 0.7$")
-# selected.reset_index(inplace=True)
-# x = selected["azimuth"]
-# y = selected["phi"]
+threshold = 0.7
+filtered, selected = select_greater_than(df, threshold)
+# plot_heatmap(filtered)
+# plot_heatmap(selected, fname="pics/filter07_simple.png", title="$\gamma > 0.7$")
+selected.reset_index(inplace=True)
+x = selected["azimuth"]
+y = selected["phi"]
 
-# plot_fits(x,y, threshold = 0.7)
+plot_fits(x,y, threshold = 0.7)
 
-# linreg = datareader.read_dir("data/equation-validation/raw/linear_regression")
-linreg = pd.read_csv("data/equation-validation/linear_regression_1000rays.csv", index_col="azimuth")
-linreg = linreg.groupby(linreg.index // 4).mean()
+# lin_linear = pd.read_csv("data/equation-validation/linear_linear_regression_10000rays.csv", index_col="angle")
+# lin_linear = lin_linear.groupby(lin_linear.index // 1).mean()
 
-# polyn = datareader.read_dir("data/equation-validation/raw/polynomial")
-polyn = pd.read_csv("data/equation-validation/polynomial_regression_1000rays.csv", index_col="azimuth")
-polyn = polyn.groupby(polyn.index // 4).mean()
 
-plt.plot(linreg.index, linreg["intercept_factor"], linewidth=3, label="linear regression")
-plt.plot(polyn.index, polyn["intercept_factor"], linewidth=3, label="3rd degree polynomial")
-plt.xlabel(r"$\theta_{az} \ (\degree)$")
-plt.ylabel("$\gamma$")
-plt.legend()
-pic_path = "pics/linear_vs_polynomial_regression.png"
-mkdir_if_not_exists(os.path.dirname(pic_path))
-plt.tight_layout()
-plt.savefig(pic_path)
-plt.show()
+# # circ_linear = datareader.read_dir("data/equation-validation/raw/linear_regression")
+# circ_linear = pd.read_csv("data/equation-validation/circular_linear_regression_1000rays.csv", index_col="azimuth")
+# circ_linear = circ_linear.groupby(circ_linear.index // 1).mean()
+
+# # circ_polyn = datareader.read_dir("data/equation-validation/raw/polynomial")
+# circ_polyn = pd.read_csv("data/equation-validation/circular_polynomial_regression_1000rays.csv", index_col="azimuth")
+# circ_polyn = circ_polyn.groupby(circ_polyn.index // 1).mean()
+
+
+# fig = plt.figure(figsize=(6.4, 4.8))
+# plt.plot(lin_linear.index, lin_linear["intercept factor"],"--", linewidth=3, label="Linear path - linear equation")
+# plt.plot(circ_linear.index, circ_linear["intercept_factor"], linewidth=3, label="Circular path - linear equation")
+# plt.plot(circ_polyn.index, circ_polyn["intercept_factor"], linewidth=3, label="Circular path - 3rd degree polynomial")
+# plt.xlabel(r"$\theta_{az} \ (\degree)$")
+# plt.ylabel("$\gamma$")
+# plt.legend(bbox_to_anchor=(0, 1.02, 1, 0.2), loc="lower left",
+#                 mode="expand", borderaxespad=0)
+# pic_path = "pics/all_paths_and_equations.png"
+# mkdir_if_not_exists(os.path.dirname(pic_path))
+# plt.tight_layout()
+# plt.savefig(pic_path)
+# plt.show()
