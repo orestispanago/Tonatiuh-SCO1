@@ -5,11 +5,13 @@ Plots heatmap for each angle
 """
 
 import os
-import glob
 import sqlite3
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from tqdm import tqdm
+from datareader import read_dir
+import matplotlib.patches as patches
 
 #cwd = os.getcwd()
 #expdir = cwd+'/out/'
@@ -20,6 +22,12 @@ import seaborn as sns
 #    os.makedirs(heatdir)
 
 
+params = {
+          'font.size': 14,
+          # 'figure.constrained_layout.use': True,
+           'savefig.dpi': 200.0,
+          }
+plt.rcParams.update(params)
 
 def view(dbname):
     """ Reads .db files
@@ -34,28 +42,6 @@ def view(dbname):
     return df, ids
 
 
-def load_dataset():
-    dfr = pd.DataFrame(columns=['angle', 'x', 'y', 'g'])
-    for i in dbfiles:
-        angle = float(os.path.basename(i)[-6:-3])  # extract angle from filename
-        x = float(os.path.basename(i)[:-13])  # extracts abs x position from filename
-        y = float(os.path.basename(i)[-12:-7])
-        photons, surfaces = view(i)
-        aux_id = surfaces['id'][surfaces['Path'].str.contains("aux")].values[0] # Finds auxiliary surface id
-        aux_hits = photons['surfaceID'].value_counts()[aux_id]
-        try:
-            absorber_id = surfaces['id'][surfaces["Path"].str.contains("Cyl_abs")].values[0]  # Finds absorber surface id
-            abs_hits = photons['surfaceID'].value_counts()[absorber_id]
-    
-            g = abs_hits/aux_hits
-            dfr = dfr.append({'angle': angle, 'x': x, 'y': y,'g': g}, ignore_index=True)
-        except IndexError:
-            print('No absorber surface in:',os.path.basename(i), ', skipping...')
-            pass # Skips files where absorber surfaces are not exported by Tonatiuh
-    dfr =  dfr.set_index(['angle','x','y'])
-    return dfr
-
-
 def create_dir(dirname):
     if not os.path.exists(dirname):
         os.makedirs(dirname)
@@ -66,46 +52,39 @@ def create_dir(dirname):
 def plot_heatmaps(df,savefigs = False):
     for k in angles:
         dfang = df.loc[k].reset_index().pivot('y', 'x', 'g')
-        dfang = dfang.sort_values(by='y', ascending=False)
-        ax = plt.axes()
-        ax = sns.heatmap(dfang,ax=ax,vmin=0, vmax=max_g, 
-                         cbar_kws={'label':'$\gamma_{th}$'},
-                         xticklabels=10,yticklabels=50)
-        ax.set_title(str(k)+' $\degree$')
+        ax = sns.heatmap(dfang,vmin=0, vmax=1)
+        ax.invert_yaxis()
+        ax.set_ylabel("$y \ (m)$")
+        ax.set_xlabel("$x \ (m)$")
+        ax.set_yticks([0, len(dfang)/2, len(dfang)])
+        ax.set_yticklabels(["0.030", "0.165", "0.300"], rotation=0)
+        ax.set_xticks([0, 50, 100])
+        ax.set_xticklabels([-0.1, -0.05, 0], rotation=0)
+        cbar = ax.collections[0].colorbar
+        cbar.ax.set_title('$\gamma$')
+        title=r'$\theta_{az} = $'+f'{k:.0f}'+'$\degree$'
+        ax.set_title(title)
         plt.tight_layout()
+        fname = f"plots/heatmaps/{k:.0f}.png"
         if savefigs is True:
-            folder = create_dir(os.getcwd()+'/plots/heatmaps/')
-            plt.savefig(folder+str(k)+'.png')
+            create_dir(os.path.dirname(fname))
+            plt.savefig(fname)
         plt.show()
  
-def plot_num_datapoints(df,gmin=0.5,savefig=False):
-    for i in angles:
-        an = df.loc[i].reset_index()
-        anbest = an[an['g']>gmin]
-        plt.scatter(i,anbest['g'].count(),c='b')
-        plt.title('$\\gamma_{th}>$'+str(gmin))
-        plt.ylabel('Count')
-        plt.xlabel('$\\theta_{az} (°)$')
+def plot_hist(df,gmin=0.5,savefig=False):
+    gt = df[df["g"]>gmin]
+    gt=gt.groupby(gt.index)['g'].count()
+    plt.bar(gt.index, gt.values)
+    plt.title(f'$\gamma > {gmin}$')
+    plt.ylabel('Data points')
+    plt.xlabel(r'$\theta_{az} \ (\degree)$')
+    plt.tight_layout()
+    fname = f"plots/hists/{gmin}.png"
     if savefig is True:
-        folder = create_dir(os.getcwd()+'/plots/scatters/count/')
-        fname = str(gmin)+'.png'
-        plt.savefig(folder+fname,dpi=300)
+        create_dir(os.path.dirname(fname))
+        plt.savefig(fname)
     plt.show()
     
-    
-def plot_hists(df,gmin=0.5,savefig=False):
-    for i in angles:
-        an = df.loc[i].reset_index()
-        anbest = an[an['g']>gmin]
-        plt.hist(anbest['g'],bins=30)
-        plt.xlabel('$\\gamma_{th}$')
-        plt.title('$\\gamma_{th}>$'+str(gmin)+', '+ str(i)+' °')
-        plt.xlim(gmin,0.8)
-        if savefig is True:
-            folder = create_dir(os.getcwd()+'/plots/hists/'+str(gmin)+'/')
-            plt.savefig(folder+str(i)+'.png',dpi=300)
-        plt.show()
-
 
 
 def plot_best_loc(df,gmin=0.5,savefig=False):
@@ -115,14 +94,16 @@ def plot_best_loc(df,gmin=0.5,savefig=False):
         plt.scatter(dfbest['x'],dfbest['y'])
         plt.xlim(-0.150,0.150)
         plt.ylim(0,0.300)
-        plt.title('$\\gamma_{th}>$'+str(gmin)+', '+ str(i)+' °')
+        title=f'$\gamma > {gmin}, $'+r'$\theta_{az} = $'+f'${i:.0f}\degree$'
+        plt.title(title)
         plt.grid(True)
-        plt.xlabel('x (m)')
-        plt.ylabel('y (m)')
+        plt.ylabel("$y \ (m)$")
+        plt.xlabel("$x \ (m)$")
+        plt.tight_layout()
+        fname = f"plots/scatters/loc/{gmin}/{i:.0f}.png"
         if savefig is True:
-            folder = create_dir(os.getcwd()+'/plots/scatters/loc/'+str(gmin)+'/')
-            fname = str(i)+'.png'
-            plt.savefig(folder+fname,dpi=300)
+            create_dir(os.path.dirname(fname))
+            plt.savefig(fname)
         plt.show()
 
 
@@ -134,7 +115,7 @@ def plot_best_loc_median(df,gmin=0.5,savefig=False):
         xC = dfbest['x'].median()
         yC = dfbest['y'].median()
         plt.scatter(xC,yC,c='b')
-        plt.title('$\\gamma_{th}>$'+str(gmin))
+        plt.title('$\\gamma >$'+str(gmin))
         plt.grid(True)
         plt.ylabel('y (m)')
         plt.xlabel('x (m)')
@@ -143,7 +124,7 @@ def plot_best_loc_median(df,gmin=0.5,savefig=False):
     if savefig is True:
         folder = create_dir(os.getcwd()+'/plots/scatters/median/')
         fname = folder+str(gmin)+'.png'
-        plt.savefig(fname,dpi=300)
+        plt.savefig(fname)
     plt.show()
  
     
@@ -154,44 +135,44 @@ def plot_best_loc_mean(df,gmin=0.5,savefig=False):
         dfbest = an[an['g']>gmin]
         xC = dfbest['x'].mean()
         yC = dfbest['y'].mean()
-        plt.scatter(xC,yC,c='b')
-        plt.title('$\\gamma_{th}>$'+str(gmin))
+        plt.scatter(xC,yC,c='C0')
+        plt.title(f'$\\gamma > {gmin}$')
         plt.grid(True)
-        plt.ylabel('y (m)')
-        plt.xlabel('x (m)')
+        plt.ylabel("$y \ (m)$")
+        plt.xlabel("$x \ (m)$")
         plt.xlim(-0.150,0.150)
         plt.ylim(0,0.300)
+        plt.tight_layout()
     if savefig is True:
-        folder = create_dir(os.getcwd()+'/plots/scatters/mean/')
-        fname = folder+str(gmin)+'.png'
-        plt.savefig(fname,dpi=300)
+        fname = f"plots/scatters/mean/{gmin}.png"
+        create_dir(os.path.dirname(fname))
+        plt.savefig(fname)
     plt.show()
 
 
 
 
-dbfiles = glob.glob(os.getcwd() + '/raw/*.db') # creates list of .db files in /raw1
+# dbfiles = glob.glob(os.getcwd() + '/raw/*.db') # creates list of .db files in /raw1
     
-dfr = load_dataset()
+# dfr = read_dir("raw")
+df = pd.read_csv("data.csv", index_col="azimuth")
 
+# df_right = df_left.copy()
+# df_right["x"]*=-1
 
-max_g = dfr['g'].max()
+# df = pd.concat([df_left, df_right])
+max_g = df['g'].max()
 
-angles = dfr.index.get_level_values('angle').unique().to_list()
+angles = df.index.get_level_values('azimuth').unique().to_list()
 angles.sort()
 
 
-plot_heatmaps(dfr,savefigs=True)
+# plot_heatmaps(df,savefigs=True)
+# plot_best_loc(df,gmin=0.7,savefig=True)
 
 gmin_list = [p/10 for p in range(3, 9)] # gmin from 0.3 to 0.8
 for i in gmin_list:
-#    plot_num_datapoints(dfr,gmin = i,savefig=True)
-#    plot_hists(dfr,gmin=i,savefig=True)
-#    plot_best_loc(dfr,gmin=i,savefig=True)
-#    plot_best_loc_median(dfr,gmin=i,savefig=True)
-    plot_best_loc_mean(dfr, gmin=i,savefig=True)
-
-
-
-
-    
+    plot_hist(df,gmin=i, savefig=True)
+    # plot_best_loc(df,gmin=i,savefig=True)
+    # plot_best_loc_median(df,gmin=i,savefig=True)
+    # plot_best_loc_mean(df, gmin=i,savefig=True)
