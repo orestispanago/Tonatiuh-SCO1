@@ -80,7 +80,7 @@ def plot_regression(df, side="left"):
     reg_results = stats.linregress(x,y)
     slope = reg_results.slope
     intercept = reg_results.intercept
-    save_regresults(reg_results, fname=f"linregress_stats_{side}.json")
+    save_regresults(reg_results, fname=f"out/linregress_stats_{side}.json")
     fig, axes = plt.subplots()
     plt.plot(x,y,".", markersize="8")
     plt.plot(x, x*slope+intercept, "r", linewidth=3, label="$y={0:.4f}x {1:+.2f}$".format(slope, intercept))
@@ -118,7 +118,7 @@ def plot_heatmap(df, fname="plots/heatmap.png", title="$\gamma$"):
 # df = read_db_files(dbfiles)
 # df.to_csv("linear.csv", index=False)
 
-df = pd.read_csv("linear.csv")
+df = pd.read_csv("data/linear.csv")
 
 plot_heatmap(df)
 

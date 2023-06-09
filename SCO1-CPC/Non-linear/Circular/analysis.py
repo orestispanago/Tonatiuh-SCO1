@@ -157,29 +157,29 @@ y = selected["phi"]
 
 plot_fits(x,y, threshold = 0.7)
 
-# lin_linear = pd.read_csv("data/equation-validation/linear_linear_regression_10000rays.csv", index_col="angle")
-# lin_linear = lin_linear.groupby(lin_linear.index // 1).mean()
+lin_linear = pd.read_csv("data/equation-validation/linear_linear_regression_10000rays.csv", index_col="angle")
+lin_linear = lin_linear.groupby(lin_linear.index // 1).mean()
 
 
-# # circ_linear = datareader.read_dir("data/equation-validation/raw/linear_regression")
-# circ_linear = pd.read_csv("data/equation-validation/circular_linear_regression_1000rays.csv", index_col="azimuth")
-# circ_linear = circ_linear.groupby(circ_linear.index // 1).mean()
+# circ_linear = datareader.read_dir("data/equation-validation/raw/linear_regression")
+circ_linear = pd.read_csv("data/equation-validation/circular_linear_regression_1000rays.csv", index_col="azimuth")
+circ_linear = circ_linear.groupby(circ_linear.index // 1).mean()
 
-# # circ_polyn = datareader.read_dir("data/equation-validation/raw/polynomial")
-# circ_polyn = pd.read_csv("data/equation-validation/circular_polynomial_regression_1000rays.csv", index_col="azimuth")
-# circ_polyn = circ_polyn.groupby(circ_polyn.index // 1).mean()
+# circ_polyn = datareader.read_dir("data/equation-validation/raw/polynomial")
+circ_polyn = pd.read_csv("data/equation-validation/circular_polynomial_regression_1000rays.csv", index_col="azimuth")
+circ_polyn = circ_polyn.groupby(circ_polyn.index // 1).mean()
 
 
-# fig = plt.figure(figsize=(6.4, 4.8))
-# plt.plot(lin_linear.index, lin_linear["intercept factor"],"--", linewidth=3, label="Linear path - linear equation")
-# plt.plot(circ_linear.index, circ_linear["intercept_factor"], linewidth=3, label="Circular path - linear equation")
-# plt.plot(circ_polyn.index, circ_polyn["intercept_factor"], linewidth=3, label="Circular path - 3rd degree polynomial")
-# plt.xlabel(r"$\theta_{az} \ (\degree)$")
-# plt.ylabel("$\gamma$")
-# plt.legend(bbox_to_anchor=(0, 1.02, 1, 0.2), loc="lower left",
-#                 mode="expand", borderaxespad=0)
-# pic_path = "pics/all_paths_and_equations.png"
-# mkdir_if_not_exists(os.path.dirname(pic_path))
-# plt.tight_layout()
-# plt.savefig(pic_path)
-# plt.show()
+fig = plt.figure(figsize=(6.4, 4.8))
+plt.plot(lin_linear.index, lin_linear["intercept factor"],"--", linewidth=3, label="Linear path - linear equation")
+plt.plot(circ_linear.index, circ_linear["intercept_factor"], linewidth=3, label="Circular path - linear equation")
+plt.plot(circ_polyn.index, circ_polyn["intercept_factor"], linewidth=3, label="Circular path - 3rd degree polynomial")
+plt.xlabel(r"$\theta_{az} \ (\degree)$")
+plt.ylabel("$\gamma$")
+plt.legend(bbox_to_anchor=(0, 1.02, 1, 0.2), loc="lower left",
+                mode="expand", borderaxespad=0)
+pic_path = "pics/all_paths_and_equations.png"
+mkdir_if_not_exists(os.path.dirname(pic_path))
+plt.tight_layout()
+plt.savefig(pic_path)
+plt.show()

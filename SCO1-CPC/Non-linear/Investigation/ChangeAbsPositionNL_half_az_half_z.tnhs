@@ -1,0 +1,33 @@
+// Absorber positions: 0.1 to 0.3m from reflector
+// Azimuth: -135 to 225
+// Exports trace results to .db and flux analysis to .txt
+// Export filename: absy_az.db
+
+wdir = "C:/Users/user/Drafts/Non-Linear/Half-Az-Half-x/";
+expdir = wdir + "raw/";
+
+tonatiuh.Open( wdir +  "comp_parab_C1.25_fl0.25_1segm_aux_surface_ideal.tnh" );
+
+tonatiuh.SetRaysPerIteration(100);
+tonatiuh.SetExportPreviousNextPhotonID( true );
+tonatiuh.SetExportPhotonMapType( "SQL_Database" );
+tonatiuh.SetExportTypeParameterValue( "ExportDirectory",  expdir );
+
+for( var absx = -0.1; absx <=0; absx=absx+0.001 ){
+	var x = absx.toString();
+	for( var absy = 0.03; absy <=0.30; absy=absy+0.001 ){
+		var y = absy.toString();
+		var translation = x+ " "+y+" 0";
+		tonatiuh.SetValue("//SunNode/RootNode/Absorber_fr", "translation", translation);
+		var fname = Number(absx).toFixed(3).toString()+ "_" + Number(absy).toFixed(3).toString(); // converts abs position to 3 decimal and then to string
+		
+		for( var az = 135; az <= 180; az=az+1 ){
+			tonatiuh.ChangeSunPosition( az, 0 );
+			var s = az.toString();
+			tonatiuh.SetExportTypeParameterValue( "DBFilename",   fname + "_" + s );
+			tonatiuh.SetExportAllPhotonMap();
+			tonatiuh.Run();
+			//tonatiuh.RunFluxAnalysis("//SunNode/RootNode/Absorber_fr/Cyl_abs", "OUTSIDE", 10000,20,20, expdir,  fname + "_" + s,true);
+		}
+	}
+}

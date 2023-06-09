@@ -1,0 +1,31 @@
+// Absorber positions: 0.1 to 0.3m from reflector
+// Azimuth: -135 to 225
+// Exports trace results to .db and flux analysis to .txt
+// Export filename: abspos_az.db
+
+wdir = "C:/Users/user/Drafts/Parabolic/Linear/";
+expdir = wdir + "raw/";
+
+tonatiuh.Open( wdir +  "Parab_C1.25_fl0.125_cyl_abs_aux_surface_ideal.tnh" );
+
+tonatiuh.SetRaysPerIteration(100);
+tonatiuh.SetExportPreviousNextPhotonID( true );
+tonatiuh.SetExportPhotonMapType( "SQL_Database" );
+tonatiuh.SetExportTypeParameterValue( "ExportDirectory",  expdir );
+
+for( var abspos = 0.031; abspos <=0.47; abspos=abspos+0.001 ){
+
+	var y = abspos.toString();
+	var translation = "0 "+y+" 0";
+	tonatiuh.SetValue("//SunNode/RootNode/Absorber_fr", "translation", translation);
+	var fname = Number(abspos).toFixed(3).toString(); // converts abs position to 3 decimal and then to string
+	
+	for( var az = 135; az <= 225; az=az+1 ){
+		tonatiuh.ChangeSunPosition( az, 0 );
+		var s = az.toString();
+		tonatiuh.SetExportTypeParameterValue( "DBFilename",   fname + "_" + s );
+		tonatiuh.SetExportAllPhotonMap();
+		tonatiuh.Run();
+		tonatiuh.RunFluxAnalysis("//SunNode/RootNode/Absorber_fr/Cyl_abs", "OUTSIDE", 10000,20,20, expdir,  fname + "_" + s,true);
+	}
+}
